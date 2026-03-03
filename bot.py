@@ -1,4 +1,6 @@
 import os
+import threading
+from flask import Flask
 from pyrogram import Client, filters, idle
 
 API_ID = int(os.environ["API_ID"])
@@ -12,15 +14,19 @@ bot = Client(
     bot_token=BOT_TOKEN
 )
 
-@bot.on_message(filters.command("start"))
-async def start(client, message):
-    await message.reply_text("👋 Bot is working perfectly!")
+app = Flask(__name__)
 
-print("🚀 Starting Bot...")
+@app.route("/")
+def home():
+    return "Bot is alive!"
 
-bot.start()
-print("✅ Bot Started Successfully!")
+def run_bot():
+    bot.start()
+    print("Bot Started Successfully!")
+    idle()
+    bot.stop()
 
-idle()
-
-bot.stop()
+if __name__ == "__main__":
+    threading.Thread(target=run_bot).start()
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host="0.0.0.0", port=port)
