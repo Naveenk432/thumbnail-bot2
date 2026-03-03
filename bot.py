@@ -1,26 +1,65 @@
 import os
+import logging
 from pyrogram import Client, filters
+from pyrogram.errors import RPCError
 
-print("Loading variables...")
+# ----------------------------
+# Logging Setup
+# ----------------------------
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
-API_ID = int(os.getenv("API_ID"))
-API_HASH = os.getenv("API_HASH")
-BOT_TOKEN = os.getenv("BOT_TOKEN")
+print("🚀 Starting Telegram Bot...")
 
-print("Creating client...")
+# ----------------------------
+# Load Environment Variables
+# ----------------------------
+try:
+    API_ID = int(os.environ.get("API_ID"))
+    API_HASH = os.environ.get("API_HASH")
+    BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
+    if not API_ID or not API_HASH or not BOT_TOKEN:
+        raise ValueError("Missing environment variables!")
+
+except Exception as e:
+    print("❌ Environment Variable Error:", e)
+    exit(1)
+
+# ----------------------------
+# Create Client
+# ----------------------------
 app = Client(
-    "bot",
+    "thumbnail-bot",
     api_id=API_ID,
     api_hash=API_HASH,
     bot_token=BOT_TOKEN
 )
 
-@app.on_message(filters.text)
-async def echo(client, message):
-    print("Message received:", message.text)
-    await message.reply_text("Working: " + message.text)
+# ----------------------------
+# Handlers
+# ----------------------------
+@app.on_message(filters.command("start"))
+async def start_handler(client, message):
+    await message.reply_text("👋 Hello! Bot is working perfectly.")
 
-print("Bot started successfully!")
+@app.on_message(filters.command("ping"))
+async def ping_handler(client, message):
+    await message.reply_text("🏓 Pong! Bot is alive.")
 
-app.run()
+@app.on_message(filters.private & filters.document)
+async def document_handler(client, message):
+    await message.reply_text("📁 File received successfully!")
+
+# ----------------------------
+# Run Bot
+# ----------------------------
+try:
+    print("✅ Bot is running...")
+    app.run()
+except RPCError as e:
+    print("❌ Telegram RPC Error:", e)
+except Exception as e:
+    print("❌ Unexpected Error:", e)
