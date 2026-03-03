@@ -1,14 +1,14 @@
 import os
-import threading
-from flask import Flask
+import asyncio
 from pyrogram import Client, filters, idle
+from pyrogram.errors import FloodWait
 
-# Environment variables
-API_ID = int(os.environ["API_ID"])
-API_HASH = os.environ["API_HASH"]
-BOT_TOKEN = os.environ["BOT_TOKEN"]
+# ===== Environment Variables =====
+API_ID = int(os.environ.get("API_ID"))
+API_HASH = os.environ.get("API_HASH")
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
-# Create bot
+# ===== Create Bot =====
 bot = Client(
     "thumbnail-bot",
     api_id=API_ID,
@@ -16,26 +16,23 @@ bot = Client(
     bot_token=BOT_TOKEN
 )
 
-# Flask app (required for Railway)
-app = Flask(__name__)
-
-@app.route("/")
-def home():
-    return "Bot is running!"
-
-# Telegram handlers
+# ===== Start Command =====
 @bot.on_message(filters.command("start"))
 async def start_handler(client, message):
-    await message.reply_text("✅ Bot is working!")
+    try:
+        await message.reply_text("✅ Bot is working properly!")
+    except FloodWait as e:
+        print(f"FloodWait detected. Sleeping {e.value} seconds...")
+        await asyncio.sleep(e.value)
+        await message.reply_text("✅ Bot is working properly!")
 
-# Run bot in background
-def run_bot():
-    bot.start()
+# ===== Main Runner =====
+async def main():
+    print("🚀 Starting Bot...")
+    await bot.start()
     print("✅ Bot Started Successfully!")
-    idle()
-    bot.stop()
+    await idle()
+    await bot.stop()
 
 if __name__ == "__main__":
-    threading.Thread(target=run_bot).start()
-    port = int(os.environ.get("PORT", 8080))
-    app.run(host="0.0.0.0", port=port)
+    asyncio.run(main())
