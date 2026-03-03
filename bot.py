@@ -27,10 +27,23 @@ except ValueError:
 
 app = Client(
     "thumbnail_bot",
-    api_id=22580782,
-    api_hash="946a0cc78ab034f489ebd3584f7b3152",
-    bot_token=8306956637:AAFvt2fEhH057P1dyh3jlG6J712WE7vlJ14
+   import os
+from pyrogram import Client
+
+API_ID = int(os.getenv("API_ID"))
+API_HASH = os.getenv("API_HASH")
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+
+app = Client(
+    "thumbnail_bot",
+    api_id=API_ID,
+    api_hash=API_HASH,
+    bot_token=BOT_TOKEN
 )
+
+print("Bot is running...")
+
+app.run()
 
 print("✅ Bot is starting...")
 
@@ -59,3 +72,4 @@ print("🚀 Bot is running...")
 # =============================
 
 app.run()
+
