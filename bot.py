@@ -1,7 +1,7 @@
 import os
 import threading
 from flask import Flask
-from pyrogram import Client, filters
+from pyrogram import Client, filters, idle
 
 # ----------------------
 # Telegram Bot Setup
@@ -24,7 +24,7 @@ async def start_handler(client, message):
     await message.reply_text("👋 Bot is working perfectly!")
 
 # ----------------------
-# Flask Keep-Alive Server
+# Flask Keep Alive
 # ----------------------
 
 app = Flask(__name__)
@@ -38,17 +38,15 @@ def run_flask():
     app.run(host="0.0.0.0", port=port)
 
 # ----------------------
-# Start Everything Properly
+# Start Everything
 # ----------------------
 
 print("🚀 Starting Bot...")
 
-bot.start()  # Start Telegram bot FIRST
+bot.start()
 print("✅ Telegram Bot Started!")
 
-# Start Flask in background thread
 threading.Thread(target=run_flask).start()
-
 print("🌐 Web Server Started!")
 
-bot.idle()  # Keep bot alive properly
+idle()  # THIS IS CORRECT
