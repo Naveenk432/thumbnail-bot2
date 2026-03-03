@@ -1,37 +1,26 @@
 import os
 from pyrogram import Client, filters
-from pyrogram.types import Message
 
-# Load environment variables safely
-API_ID = os.getenv("API_ID")
+print("Loading variables...")
+
+API_ID = int(os.getenv("API_ID"))
 API_HASH = os.getenv("API_HASH")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
-# Safety checks
-if not API_ID or not API_HASH or not BOT_TOKEN:
-    print("❌ Missing environment variables!")
-    exit()
+print("Creating client...")
 
-try:
-    API_ID = int(API_ID)
-except ValueError:
-    print("❌ API_ID must be a number!")
-    exit()
-
-# Create bot
 app = Client(
-    "thumbnail_bot",
+    "bot",
     api_id=API_ID,
     api_hash=API_HASH,
     bot_token=BOT_TOKEN
 )
 
-print("🚀 Bot started successfully")
+@app.on_message(filters.text)
+async def echo(client, message):
+    print("Message received:", message.text)
+    await message.reply_text("Working: " + message.text)
 
-# Start command
-@app.on_message(filters.command("start"))
-async def start(client, message: Message):
-    await message.reply_text("👋 Hello! Bot is working perfectly.")
+print("Bot started successfully!")
 
-# Keep bot alive
 app.run()
