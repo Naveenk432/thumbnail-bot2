@@ -1,89 +1,39 @@
 from pyrogram import Client, filters
 import os
 
-# ==============================
-# BOT CONFIG
-# ==============================
-
-API_ID = 123456
-API_HASH = "YOUR_API_HASH"
-BOT_TOKEN = "YOUR_BOT_TOKEN"
+API_ID = int(os.getenv("API_ID"))
+API_HASH = os.getenv("API_HASH")
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 bot = Client(
-    "thumbnail-bot",
+    "bot",
     api_id=API_ID,
     api_hash=API_HASH,
     bot_token=BOT_TOKEN,
-    workers=100
+    workers=50
 )
-
-# ==============================
-# START COMMAND
-# ==============================
 
 @bot.on_message(filters.command("start"))
 async def start(client, message):
     await message.reply_text(
-        "👋 Hello!\n\n"
-        "Send me any video or file.\n"
-        "I will download and resend it.\n\n"
-        "Supports files up to 4GB 🚀"
+        "Hello 👋\n\nSend me a file and I will download and resend it."
     )
 
-# ==============================
-# FILE HANDLER
-# ==============================
-
 @bot.on_message(filters.video | filters.document)
-async def process_file(client, message):
+async def handle_file(client, message):
 
-    status = await message.reply_text("📥 Downloading...")
+    msg = await message.reply_text("📥 Downloading...")
 
     file_path = await message.download()
 
-    await status.edit("✏ Send caption (or type /skip)")
+    await msg.edit("📤 Uploading...")
 
-    try:
-        caption_msg = await bot.listen(message.chat.id)
-        caption = caption_msg.text
-        if caption == "/skip":
-            caption = None
-    except:
-        caption = None
-
-    await status.edit("🖼 Send thumbnail (or type /skip)")
-
-    thumb = None
-    try:
-        thumb_msg = await bot.listen(message.chat.id)
-
-        if thumb_msg.text == "/skip":
-            thumb = None
-        elif thumb_msg.photo:
-            thumb = await thumb_msg.download()
-    except:
-        thumb = None
-
-    await status.edit("📤 Uploading file...")
-
-    await message.reply_document(
-        file_path,
-        caption=caption,
-        thumb=thumb
-    )
+    await message.reply_document(file_path)
 
     os.remove(file_path)
 
-    if thumb:
-        os.remove(thumb)
-
-    await status.delete()
-
-# ==============================
-# RUN BOT
-# ==============================
+    await msg.delete()
 
 print("Bot Started Successfully 🚀")
 
 bot.run()
-
