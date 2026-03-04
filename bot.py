@@ -1,86 +1,38 @@
 import os
-from pyrogram import Client, filters
-from pyrogram.types import Message
+import asyncio
+from pyrogram import Client, filters, idle
+from pyrogram.errors import FloodWait
 
-API_ID = int(os.getenv("API_ID"))
-API_HASH = os.getenv("API_HASH")
-BOT_TOKEN = os.getenv("BOT_TOKEN")
+# ===== Environment Variables =====
+API_ID = int(os.environ.get("API_ID"))
+API_HASH = os.environ.get("API_HASH")
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
+# ===== Create Bot =====
 bot = Client(
-    "thumbbot",
+    "thumbnail-bot",
     api_id=API_ID,
     api_hash=API_HASH,
-    bot_token=BOT_TOKEN,
-    workers=40
+    bot_token=BOT_TOKEN
 )
 
-users = {}
-
+# ===== Start Command =====
 @bot.on_message(filters.command("start"))
-async def start(client, message: Message):
-    await message.reply_text(
-        "Send a file.\n\n"
-        "Then send thumbnail.\n"
-        "Then send caption."
-    )
+async def start_handler(client, message):
+    try:
+        await message.reply_text("✅ Bot is working properly!")
+    except FloodWait as e:
+        print(f"FloodWait detected. Sleeping {e.value} seconds...")
+        await asyncio.sleep(e.value)
+        await message.reply_text("✅ Bot is working properly!")
 
+# ===== Main Runner =====
+async def main():
+    print("🚀 Starting Bot...")
+    await bot.start()
+    print("✅ Bot Started Successfully!")
+    await idle()
+    await bot.stop()
 
-@bot.on_message(filters.document | filters.video | filters.audio)
-async def file_receive(client, message: Message):
-
-    uid = message.from_user.id
-
-    await message.reply_text("⬇ Downloading file...")
-
-    file_path = await message.download()
-
-    users[uid] = {"file": file_path}
-
-    await message.reply_text("🖼 Now send thumbnail image.")
-
-
-@bot.on_message(filters.photo)
-async def thumb_receive(client, message: Message):
-
-    uid = message.from_user.id
-
-    if uid not in users:
-        return
-
-    thumb = await message.download()
-
-    users[uid]["thumb"] = thumb
-
-    await message.reply_text("✏ Now send caption text.")
-
-
-@bot.on_message(filters.text & ~filters.command)
-async def caption_receive(client, message: Message):
-
-    uid = message.from_user.id
-
-    if uid not in users:
-        return
-
-    caption = message.text
-    file_path = users[uid]["file"]
-    thumb = users[uid]["thumb"]
-
-    await message.reply_text("⬆ Uploading file...")
-
-    await message.reply_document(
-        document=file_path,
-        thumb=thumb,
-        caption=caption
-    )
-
-    os.remove(file_path)
-    os.remove(thumb)
-
-    users.pop(uid)
-
-    await message.reply_text("✅ Done!")
-
-print("Bot Started Successfully")
-
-bot.run()
+if __name__ == "__main__":
+    asyncio.run(main())
