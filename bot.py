@@ -1,13 +1,12 @@
 import os
 from pyrogram import Client, filters
-from pyrogram.types import Message
 
-API_ID = int(os.environ.get("API_ID"))
-API_HASH = os.environ.get("API_HASH")
-BOT_TOKEN = os.environ.get("BOT_TOKEN")
+API_ID = int(os.getenv("API_ID"))
+API_HASH = os.getenv("API_HASH")
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 bot = Client(
-    "thumbnail-bot",
+    "thumbnail_bot",
     api_id=API_ID,
     api_hash=API_HASH,
     bot_token=BOT_TOKEN,
@@ -17,16 +16,11 @@ bot = Client(
 user_data = {}
 
 @bot.on_message(filters.command("start"))
-async def start(client, message: Message):
-    await message.reply_text(
-        "Hello!\n\nSend a file.\n"
-        "Then send thumbnail.\n"
-        "Then send caption."
-    )
+async def start(client, message):
+    await message.reply_text("Send a file.")
 
 @bot.on_message(filters.document | filters.video | filters.audio)
-async def receive_file(client, message: Message):
-
+async def file_receive(client, message):
     user_id = message.from_user.id
 
     await message.reply_text("Downloading file...")
@@ -35,24 +29,24 @@ async def receive_file(client, message: Message):
 
     user_data[user_id] = {"file": file_path}
 
-    await message.reply_text("Now send thumbnail image.")
+    await message.reply_text("Send thumbnail image.")
 
 @bot.on_message(filters.photo)
-async def receive_thumb(client, message: Message):
+async def thumb_receive(client, message):
 
     user_id = message.from_user.id
 
     if user_id not in user_data:
         return
 
-    thumb_path = await message.download()
+    thumb = await message.download()
 
-    user_data[user_id]["thumb"] = thumb_path
+    user_data[user_id]["thumb"] = thumb
 
-    await message.reply_text("Now send caption text.")
+    await message.reply_text("Send caption text.")
 
 @bot.on_message(filters.text & ~filters.command)
-async def receive_caption(client, message: Message):
+async def caption_receive(client, message):
 
     user_id = message.from_user.id
 
@@ -61,18 +55,16 @@ async def receive_caption(client, message: Message):
 
     caption = message.text
     file_path = user_data[user_id]["file"]
-    thumb_path = user_data[user_id]["thumb"]
-
-    await message.reply_text("Uploading file...")
+    thumb = user_data[user_id]["thumb"]
 
     await message.reply_document(
         document=file_path,
-        thumb=thumb_path,
+        thumb=thumb,
         caption=caption
     )
 
     os.remove(file_path)
-    os.remove(thumb_path)
+    os.remove(thumb)
 
     user_data.pop(user_id)
 
