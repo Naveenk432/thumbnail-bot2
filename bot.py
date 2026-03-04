@@ -1,14 +1,12 @@
 import os
 import asyncio
-from pyrogram import Client, filters, idle
+from pyrogram import Client, filters
 from pyrogram.errors import FloodWait
 
-# ===== Environment Variables =====
 API_ID = int(os.environ.get("API_ID"))
 API_HASH = os.environ.get("API_HASH")
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
-# ===== Create Bot =====
 bot = Client(
     "thumbnail-bot",
     api_id=API_ID,
@@ -16,23 +14,41 @@ bot = Client(
     bot_token=BOT_TOKEN
 )
 
-# ===== Start Command =====
+# Start command
 @bot.on_message(filters.command("start"))
-async def start_handler(client, message):
+async def start(client, message):
+    await message.reply_text(
+        "👋 Hello!\n\nSend me a video or file and I will return it with a thumbnail."
+    )
+
+# Handle video/document
+@bot.on_message(filters.video | filters.document)
+async def handle_file(client, message):
     try:
-        await message.reply_text("✅ Bot is working properly!")
+        msg = await message.reply_text("📥 Downloading file...")
+
+        file_path = await message.download()
+
+        await msg.edit("🖼 Creating thumbnail...")
+
+        thumb = await client.download_media(message.from_user.photo.big_file_id) if message.from_user.photo else None
+
+        await msg.edit("📤 Uploading file with thumbnail...")
+
+        await message.reply_document(
+            file_path,
+            thumb=thumb
+        )
+
+        await msg.delete()
+
+        os.remove(file_path)
+        if thumb:
+            os.remove(thumb)
+
     except FloodWait as e:
-        print(f"FloodWait detected. Sleeping {e.value} seconds...")
         await asyncio.sleep(e.value)
-        await message.reply_text("✅ Bot is working properly!")
 
-# ===== Main Runner =====
-async def main():
-    print("🚀 Starting Bot...")
-    await bot.start()
-    print("✅ Bot Started Successfully!")
-    await idle()
-    await bot.stop()
-
-if __name__ == "__main__":
-    asyncio.run(main())
+# Run bot
+print("🚀 Starting Bot...")
+bot.run()
