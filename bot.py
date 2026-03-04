@@ -10,7 +10,7 @@ bot = Client(
     api_id=API_ID,
     api_hash=API_HASH,
     bot_token=BOT_TOKEN,
-    workers=60
+    workers=50
 )
 
 user_data = {}
@@ -65,4 +65,3 @@ async def get_caption(client, message):
     await message.reply_text("Done!")
 
 bot.run()
-
