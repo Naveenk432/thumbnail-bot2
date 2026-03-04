@@ -13,16 +13,15 @@ bot = Client(
     workers=70
 )
 
-user_files = {}
+user_data = {}
 
 @bot.on_message(filters.command("start"))
 async def start(client, message):
     await message.reply_text(
-        "👋 Hello!\n\nSend me a file.\n"
-        "I will ask for description and thumbnail."
+        "👋 Hello!\n\nSend me a file.\nI will ask for description and thumbnail."
     )
 
-# Step 1: receive file
+# Step 1: Receive file
 @bot.on_message(filters.video | filters.document)
 async def receive_file(client, message):
 
@@ -30,31 +29,33 @@ async def receive_file(client, message):
 
     file_path = await message.download()
 
-    user_files[message.chat.id] = {"file": file_path}
+    user_data[message.chat.id] = {
+        "file": file_path
+    }
 
     await msg.edit("✏ Send description text")
 
-# Step 2: receive description
-@bot.on_message(filters.text & ~filters.command)
+# Step 2: Receive description
+@bot.on_message(filters.text)
 async def receive_description(client, message):
 
-    if message.chat.id not in user_files:
+    if message.chat.id not in user_data:
         return
 
-    user_files[message.chat.id]["caption"] = message.text
+    user_data[message.chat.id]["caption"] = message.text
 
     await message.reply_text("🖼 Send thumbnail image")
 
-# Step 3: receive thumbnail
+# Step 3: Receive thumbnail
 @bot.on_message(filters.photo)
 async def receive_thumbnail(client, message):
 
-    if message.chat.id not in user_files:
+    if message.chat.id not in user_data:
         return
 
     thumb = await message.download()
 
-    data = user_files[message.chat.id]
+    data = user_data[message.chat.id]
 
     await message.reply_text("📤 Uploading file...")
 
@@ -67,7 +68,7 @@ async def receive_thumbnail(client, message):
     os.remove(data["file"])
     os.remove(thumb)
 
-    del user_files[message.chat.id]
+    del user_data[message.chat.id]
 
 print("Bot Started Successfully 🚀")
 
