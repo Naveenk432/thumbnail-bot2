@@ -10,7 +10,7 @@ bot = Client(
     api_id=API_ID,
     api_hash=API_HASH,
     bot_token=BOT_TOKEN,
-    workers=16
+    workers=60
 )
 
 thumbs = {}
@@ -98,3 +98,4 @@ async def process_file(client, message):
 
 print("Bot Started Successfully")
 bot.run()
+
