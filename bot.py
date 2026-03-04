@@ -1,113 +1,88 @@
-import os
 from pyrogram import Client, filters
+import os
 
-API_ID = int(os.environ.get("API_ID"))
-API_HASH = os.environ.get("API_HASH")
-BOT_TOKEN = os.environ.get("BOT_TOKEN")
+# ==============================
+# BOT CONFIG
+# ==============================
+
+API_ID = 123456
+API_HASH = "YOUR_API_HASH"
+BOT_TOKEN = "YOUR_BOT_TOKEN"
 
 bot = Client(
     "thumbnail-bot",
     api_id=API_ID,
     api_hash=API_HASH,
     bot_token=BOT_TOKEN,
-    workers=8
+    workers=100
 )
 
-thumbs = {}
-captions = {}
-waiting_thumb = set()
-waiting_caption = set()
-
+# ==============================
+# START COMMAND
+# ==============================
 
 @bot.on_message(filters.command("start"))
 async def start(client, message):
     await message.reply_text(
         "👋 Hello!\n\n"
-        "Commands:\n"
-        "/setthumb - Set thumbnail\n"
-        "/setcaption - Set caption\n\n"
-        "After setting send any file."
+        "Send me any video or file.\n"
+        "I will download and resend it.\n\n"
+        "Supports files up to 4GB 🚀"
     )
 
+# ==============================
+# FILE HANDLER
+# ==============================
 
-# SET THUMBNAIL
-@bot.on_message(filters.command("setthumb"))
-async def set_thumb(client, message):
-    user_id = message.from_user.id
-    waiting_thumb.add(user_id)
-
-    await message.reply_text("📸 Send image for thumbnail")
-
-
-@bot.on_message(filters.photo)
-async def save_thumb(client, message):
-
-    user_id = message.from_user.id
-
-    if user_id in waiting_thumb:
-
-        file = await message.download()
-
-        thumbs[user_id] = file
-
-        waiting_thumb.remove(user_id)
-
-        await message.reply_text("✅ Thumbnail saved")
-
-
-# SET CAPTION
-@bot.on_message(filters.command("setcaption"))
-async def set_caption(client, message):
-
-    user_id = message.from_user.id
-
-    waiting_caption.add(user_id)
-
-    await message.reply_text("✏ Send caption text")
-
-
-@bot.on_message(filters.text & ~filters.command(["start","setthumb","setcaption"]))
-async def save_caption(client, message):
-
-    user_id = message.from_user.id
-
-    if user_id in waiting_caption:
-
-        captions[user_id] = message.text
-
-        waiting_caption.remove(user_id)
-
-        await message.reply_text("✅ Caption saved")
-
-
-# HANDLE FILE
 @bot.on_message(filters.video | filters.document)
-async def handle_file(client, message):
-
-    user_id = message.from_user.id
+async def process_file(client, message):
 
     status = await message.reply_text("📥 Downloading...")
 
     file_path = await message.download()
 
-    thumb = thumbs.get(user_id)
+    await status.edit("✏ Send caption (or type /skip)")
 
-    caption = captions.get(user_id)
+    try:
+        caption_msg = await bot.listen(message.chat.id)
+        caption = caption_msg.text
+        if caption == "/skip":
+            caption = None
+    except:
+        caption = None
 
-    await status.edit("📤 Uploading...")
+    await status.edit("🖼 Send thumbnail (or type /skip)")
+
+    thumb = None
+    try:
+        thumb_msg = await bot.listen(message.chat.id)
+
+        if thumb_msg.text == "/skip":
+            thumb = None
+        elif thumb_msg.photo:
+            thumb = await thumb_msg.download()
+    except:
+        thumb = None
+
+    await status.edit("📤 Uploading file...")
 
     await message.reply_document(
         file_path,
         caption=caption,
-        thumb=thumb,
-        force_document=True
+        thumb=thumb
     )
 
     os.remove(file_path)
 
+    if thumb:
+        os.remove(thumb)
+
     await status.delete()
 
+# ==============================
+# RUN BOT
+# ==============================
 
-print("🚀 Starting Bot...")
+print("Bot Started Successfully 🚀")
+
 bot.run()
-
