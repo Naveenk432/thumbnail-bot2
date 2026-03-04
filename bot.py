@@ -10,7 +10,7 @@ bot = Client(
     api_id=API_ID,
     api_hash=API_HASH,
     bot_token=BOT_TOKEN,
-    workers=70
+    workers=60
 )
 
 user_files = {}
@@ -72,3 +72,4 @@ async def receive_thumbnail(client, message):
 print("Bot Started Successfully 🚀")
 
 bot.run()
+
