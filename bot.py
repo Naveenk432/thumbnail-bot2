@@ -1,86 +1,100 @@
 import os
 from pyrogram import Client, filters
-from pyrogram.types import Message
 
-API_ID = int(os.getenv("API_ID"))
-API_HASH = os.getenv("API_HASH")
-BOT_TOKEN = os.getenv("BOT_TOKEN")
+API_ID = int(os.environ.get("API_ID"))
+API_HASH = os.environ.get("API_HASH")
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
 bot = Client(
-    "thumbbot",
+    "thumbnail-bot",
     api_id=API_ID,
     api_hash=API_HASH,
     bot_token=BOT_TOKEN,
-    workers=50
+    workers=16
 )
 
-users = {}
+thumbs = {}
+captions = {}
+wait_thumb = set()
+wait_caption = set()
+
 
 @bot.on_message(filters.command("start"))
-async def start(client, message: Message):
+async def start(client, message):
     await message.reply_text(
-        "Send a file.\n\n"
-        "Then send thumbnail.\n"
-        "Then send caption."
+        "Hello 👋\n\n"
+        "/setthumb - Set thumbnail\n"
+        "/setcaption - Set caption\n\n"
+        "After setting send any file."
     )
 
 
-@bot.on_message(filters.document | filters.video | filters.audio)
-async def file_receive(client, message: Message):
-
-    uid = message.from_user.id
-
-    await message.reply_text("⬇ Downloading file...")
-
-    file_path = await message.download()
-
-    users[uid] = {"file": file_path}
-
-    await message.reply_text("🖼 Now send thumbnail image.")
+@bot.on_message(filters.command("setthumb"))
+async def thumb(client, message):
+    wait_thumb.add(message.from_user.id)
+    await message.reply_text("Send image for thumbnail")
 
 
 @bot.on_message(filters.photo)
-async def thumb_receive(client, message: Message):
+async def save_thumb(client, message):
 
-    uid = message.from_user.id
+    user = message.from_user.id
 
-    if uid not in users:
-        return
+    if user in wait_thumb:
 
-    thumb = await message.download()
+        file = await message.download()
 
-    users[uid]["thumb"] = thumb
+        thumbs[user] = file
 
-    await message.reply_text("✏ Now send caption text.")
+        wait_thumb.remove(user)
+
+        await message.reply_text("Thumbnail saved ✅")
 
 
-@bot.on_message(filters.text & ~filters.command)
-async def caption_receive(client, message: Message):
+@bot.on_message(filters.command("setcaption"))
+async def caption(client, message):
 
-    uid = message.from_user.id
+    wait_caption.add(message.from_user.id)
 
-    if uid not in users:
-        return
+    await message.reply_text("Send caption text")
 
-    caption = message.text
-    file_path = users[uid]["file"]
-    thumb = users[uid]["thumb"]
 
-    await message.reply_text("⬆ Uploading file...")
+@bot.on_message(filters.text & ~filters.command(["start","setthumb","setcaption"]))
+async def save_caption(client, message):
+
+    user = message.from_user.id
+
+    if user in wait_caption:
+
+        captions[user] = message.text
+
+        wait_caption.remove(user)
+
+        await message.reply_text("Caption saved ✅")
+
+
+@bot.on_message(filters.document | filters.video)
+async def process_file(client, message):
+
+    user = message.from_user.id
+
+    status = await message.reply_text("Downloading...")
+
+    file_path = await message.download()
+
+    await status.edit("Uploading...")
 
     await message.reply_document(
-        document=file_path,
-        thumb=thumb,
-        caption=caption
+        file_path,
+        caption=captions.get(user),
+        thumb=thumbs.get(user),
+        force_document=True
     )
 
     os.remove(file_path)
-    os.remove(thumb)
 
-    users.pop(uid)
+    await status.delete()
 
-    await message.reply_text("✅ Done!")
 
 print("Bot Started Successfully")
-
 bot.run()
