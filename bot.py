@@ -79,3 +79,4 @@ async def handle_file(client, message):
 
 print("🚀 Starting Bot...")
 bot.run()
+
