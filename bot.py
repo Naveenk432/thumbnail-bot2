@@ -12,39 +12,14 @@ bot = Client(
     bot_token=BOT_TOKEN
 )
 
-user_files = {}
-
 @bot.on_message(filters.command("start"))
 async def start(client, message):
-    await message.reply_text("Send a file.")
-
-@bot.on_message(filters.document | filters.video | filters.audio)
-async def receive_file(client, message):
-    uid = message.from_user.id
-    file_path = await message.download()
-    user_files[uid] = file_path
-    await message.reply_text("Send caption text.")
+    await message.reply_text("Bot is working!")
 
 @bot.on_message(filters.text & ~filters.command)
-async def receive_caption(client, message):
-    uid = message.from_user.id
+async def text_handler(client, message):
+    await message.reply_text("You sent: " + message.text)
 
-    if uid not in user_files:
-        return
-
-    file_path = user_files[uid]
-    caption = message.text
-
-    await message.reply_document(
-        document=file_path,
-        caption=caption
-    )
-
-    os.remove(file_path)
-    del user_files[uid]
-
-    await message.reply_text("Done")
-
-print("Bot Started")
+print("Bot started")
 
 bot.run()
