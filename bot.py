@@ -1,7 +1,5 @@
 import os
-import asyncio
 from pyrogram import Client, filters
-from pyrogram.errors import FloodWait
 
 API_ID = int(os.environ.get("API_ID"))
 API_HASH = os.environ.get("API_HASH")
@@ -14,42 +12,70 @@ bot = Client(
     bot_token=BOT_TOKEN
 )
 
-# Start command
+thumbs = {}
+captions = {}
+
 @bot.on_message(filters.command("start"))
 async def start(client, message):
     await message.reply_text(
-        "👋 Hello!\n\nSend me a video or file and I will return it with a thumbnail."
+        "👋 Hello!\n\n"
+        "Commands:\n"
+        "/setthumb - Set thumbnail\n"
+        "/setcaption - Set caption\n\n"
+        "Then send a file."
     )
 
-# Handle video/document
+# SET THUMBNAIL
+@bot.on_message(filters.command("setthumb"))
+async def set_thumb(client, message):
+    await message.reply_text("📸 Send me the image to set as thumbnail.")
+
+@bot.on_message(filters.photo)
+async def save_thumb(client, message):
+    user_id = message.from_user.id
+
+    file = await message.download()
+
+    thumbs[user_id] = file
+
+    await message.reply_text("✅ Thumbnail saved!")
+
+# SET CAPTION
+@bot.on_message(filters.command("setcaption"))
+async def set_caption(client, message):
+    await message.reply_text("✏️ Send me the caption text.")
+
+@bot.on_message(filters.text & ~filters.command)
+async def save_caption(client, message):
+    user_id = message.from_user.id
+
+    captions[user_id] = message.text
+
+    await message.reply_text("✅ Caption saved!")
+
+# HANDLE FILE
 @bot.on_message(filters.video | filters.document)
 async def handle_file(client, message):
-    try:
-        msg = await message.reply_text("📥 Downloading file...")
+    user_id = message.from_user.id
 
-        file_path = await message.download()
+    msg = await message.reply_text("📥 Downloading file...")
 
-        await msg.edit("🖼 Creating thumbnail...")
+    file_path = await message.download()
 
-        thumb = await client.download_media(message.from_user.photo.big_file_id) if message.from_user.photo else None
+    thumb = thumbs.get(user_id)
+    caption = captions.get(user_id)
 
-        await msg.edit("📤 Uploading file with thumbnail...")
+    await msg.edit("📤 Uploading file...")
 
-        await message.reply_document(
-            file_path,
-            thumb=thumb
-        )
+    await message.reply_document(
+        file_path,
+        caption=caption,
+        thumb=thumb
+    )
 
-        await msg.delete()
+    os.remove(file_path)
 
-        os.remove(file_path)
-        if thumb:
-            os.remove(thumb)
+    await msg.delete()
 
-    except FloodWait as e:
-        await asyncio.sleep(e.value)
-
-# Run bot
 print("🚀 Starting Bot...")
 bot.run()
-
