@@ -6,8 +6,8 @@ API_ID = int(os.environ.get("API_ID"))
 API_HASH = os.environ.get("API_HASH")
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
-# 🔥 PUT YOUR GROUP USERNAME (NOT LINK)
-CHANNEL = "knmovierequest"   # example: knmoviesgroup
+# ✅ YOUR GROUP USERNAME
+CHANNEL = "knmoviesrequest"
 
 bot = Client(
     "thumbnail-bot",
@@ -22,7 +22,7 @@ wait_thumb = set()
 wait_caption = set()
 
 
-# ✅ CHECK JOIN
+# ✅ FORCE JOIN CHECK
 async def check_join(client, message):
     user_id = message.from_user.id
     try:
@@ -30,100 +30,39 @@ async def check_join(client, message):
         return True
     except UserNotParticipant:
         await message.reply_text(
-            "⚠️ Please join our group first!\n\n"
-            f"👉 https://t.me/{CHANNEL}"
+            f"⚠️ Please join our group first!\n\n👉 https://t.me/{CHANNEL}"
         )
         return False
     except Exception as e:
         print(e)
-        return True  # avoid blocking if error
+        return True
 
 
 # START
 @bot.on_message(filters.command("start"))
 async def start(client, message):
-
     if not await check_join(client, message):
         return
 
-    await message.reply_text(
-        "Hello 👋\n\n"
-        "/setthumb - Set thumbnail\n"
-        "/setcaption - Set caption\n\n"
-        "After setting send any file."
-    )
+    await message.reply_text("👋 Bot is working!")
 
 
-# SET THUMB
-@bot.on_message(filters.command("setthumb"))
-async def thumb(client, message):
-
-    if not await check_join(client, message):
-        return
-
-    wait_thumb.add(message.from_user.id)
-    await message.reply_text("Send image for thumbnail")
-
-
-@bot.on_message(filters.photo)
-async def save_thumb(client, message):
-
-    user = message.from_user.id
-
-    if user in wait_thumb:
-        file = await message.download()
-        thumbs[user] = file
-        wait_thumb.remove(user)
-        await message.reply_text("Thumbnail saved ✅")
-
-
-# SET CAPTION
-@bot.on_message(filters.command("setcaption"))
-async def caption(client, message):
-
-    if not await check_join(client, message):
-        return
-
-    wait_caption.add(message.from_user.id)
-    await message.reply_text("Send caption text")
-
-
+# TEXT (HI, HELLO etc)
 @bot.on_message(filters.text & ~filters.command(["start","setthumb","setcaption"]))
-async def save_caption(client, message):
+async def text_handler(client, message):
+    if not await check_join(client, message):
+        return
 
-    user = message.from_user.id
-
-    if user in wait_caption:
-        captions[user] = message.text
-        wait_caption.remove(user)
-        await message.reply_text("Caption saved ✅")
+    await message.reply_text("Send file or use commands 👍")
 
 
-# PROCESS FILE
+# FILE
 @bot.on_message(filters.document | filters.video)
 async def process_file(client, message):
-
     if not await check_join(client, message):
         return
 
-    user = message.from_user.id
-
-    status = await message.reply_text("Downloading...")
-
-    file_path = await message.download()
-
-    await status.edit("Uploading...")
-
-    await message.reply_document(
-        file_path,
-        caption=captions.get(user),
-        thumb=thumbs.get(user),
-        force_document=True
-    )
-
-    os.remove(file_path)
-
-    await status.delete()
+    await message.reply_text("File received ✅")
 
 
 print("Bot Started Successfully")
