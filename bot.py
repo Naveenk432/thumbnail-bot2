@@ -6,11 +6,11 @@ API_ID = int(os.environ.get("API_ID"))
 API_HASH = os.environ.get("API_HASH")
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
-# 🔥 PUT YOUR GROUP ID HERE (VERY IMPORTANT)
-GROUP_ID =4646565656556656   # 👈 replace with your real group ID
+# 🔥 PUT YOUR GROUP ID HERE
+GROUP_ID = -1001234567890   # 👈 REPLACE THIS
 
-# 🔗 Put your group link here
-GROUP_LINK = "https://t.me/your_group_link"
+# 🔗 PUT YOUR GROUP INVITE LINK
+GROUP_LINK = "https://t.me/+6DRO0BsAvXA4OTA9"
 
 bot = Client(
     "thumbnail-bot",
@@ -63,7 +63,6 @@ async def recheck(client, callback_query):
 # 🚀 START
 @bot.on_message(filters.command("start"))
 async def start(client, message):
-
     if not await check_join(client, message):
         return
 
@@ -78,7 +77,6 @@ async def start(client, message):
 # 🖼 SET THUMBNAIL
 @bot.on_message(filters.command("setthumb"))
 async def thumb(client, message):
-
     if not await check_join(client, message):
         return
 
@@ -88,7 +86,6 @@ async def thumb(client, message):
 
 @bot.on_message(filters.photo)
 async def save_thumb(client, message):
-
     if not await check_join(client, message):
         return
 
@@ -105,7 +102,6 @@ async def save_thumb(client, message):
 # ✏️ SET CAPTION
 @bot.on_message(filters.command("setcaption"))
 async def caption(client, message):
-
     if not await check_join(client, message):
         return
 
@@ -115,7 +111,6 @@ async def caption(client, message):
 
 @bot.on_message(filters.text)
 async def save_caption(client, message):
-
     if not await check_join(client, message):
         return
 
@@ -131,7 +126,6 @@ async def save_caption(client, message):
 # 📂 PROCESS FILE
 @bot.on_message(filters.document | filters.video)
 async def process_file(client, message):
-
     if not await check_join(client, message):
         return
 
@@ -153,9 +147,6 @@ async def process_file(client, message):
     os.remove(file_path)
 
     await status.delete()
-    @bot.on_message()
-async def get_id(client, message):
-    print(message.chat.id)
 
 
 # 🚀 START BOT
