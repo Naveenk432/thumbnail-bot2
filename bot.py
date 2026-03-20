@@ -147,7 +147,7 @@ async def process_file(client, message):
     os.remove(file_path)
 
     await status.delete()
-    if True;
+    if True:
         pass
     @bot.on_message()
     async def get_group_id(client, message):
