@@ -147,6 +147,9 @@ async def process_file(client, message):
     os.remove(file_path)
 
     await status.delete()
+    @bot.on_message()
+async def get_group_id(client, message):
+    print("GROUP ID:", message.chat.id)
 
 
 # 🚀 START BOT
