@@ -2,17 +2,12 @@ import os
 import asyncio
 from pyrogram import Client, filters, idle
 
-# ✅ Fix event loop (IMPORTANT for Render)
-try:
-    asyncio.get_event_loop()
-except RuntimeError:
-    asyncio.set_event_loop(asyncio.new_event_loop())
-
-# ✅ Env variables
+# ✅ Get environment variables
 API_ID = int(os.environ.get("API_ID"))
 API_HASH = os.environ.get("API_HASH")
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
+# ✅ Create bot
 bot = Client(
     "thumbnail-bot",
     api_id=API_ID,
@@ -21,6 +16,7 @@ bot = Client(
     workers=50
 )
 
+# ✅ Storage
 thumbs = {}
 captions = {}
 wait_thumb = set()
@@ -31,10 +27,10 @@ wait_caption = set()
 @bot.on_message(filters.command("start"))
 async def start(client, message):
     await message.reply_text(
-        "Hello 👋\n\n"
+        "👋 Hello!\n\n"
         "/setthumb - Set thumbnail\n"
         "/setcaption - Set caption\n\n"
-        "After setting send any file."
+        "Then send any file."
     )
 
 
@@ -44,7 +40,7 @@ async def thumb(client, message):
     if not message.from_user:
         return
     wait_thumb.add(message.from_user.id)
-    await message.reply_text("Send image for thumbnail")
+    await message.reply_text("📸 Send image for thumbnail")
 
 
 # ✅ SAVE THUMB
@@ -61,9 +57,9 @@ async def save_thumb(client, message):
             file = await message.download()
             thumbs[user] = file
             wait_thumb.remove(user)
-            await message.reply_text("Thumbnail saved ✅")
+            await message.reply_text("✅ Thumbnail saved")
         except Exception as e:
-            await message.reply_text(f"Error: {e}")
+            await message.reply_text(f"❌ Error: {e}")
 
 
 # ✅ SET CAPTION
@@ -74,7 +70,7 @@ async def caption(client, message):
         return
 
     wait_caption.add(message.from_user.id)
-    await message.reply_text("Send caption text")
+    await message.reply_text("✍️ Send caption text")
 
 
 # ✅ SAVE CAPTION
@@ -89,7 +85,7 @@ async def save_caption(client, message):
     if user in wait_caption:
         captions[user] = message.text
         wait_caption.remove(user)
-        await message.reply_text("Caption saved ✅")
+        await message.reply_text("✅ Caption saved")
 
 
 # ✅ PROCESS FILE
