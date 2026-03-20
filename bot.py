@@ -1,14 +1,16 @@
 import os
 from pyrogram import Client, filters
-from pyrogram.errors import UserNotParticipant
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 API_ID = int(os.environ.get("API_ID"))
 API_HASH = os.environ.get("API_HASH")
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
-# 👉 Put your channel username (without @)
-CHANNEL = "t.me/knmoviesrequest"
+# 🔥 PUT YOUR GROUP ID HERE (VERY IMPORTANT)
+GROUP_ID = -https://t.me/+6DRO0BsAvXA4OTA9   # 👈 replace with your real group ID
+
+# 🔗 Put your group link here
+GROUP_LINK = "https://t.me/your_group_link"
 
 bot = Client(
     "thumbnail-bot",
@@ -23,37 +25,42 @@ wait_thumb = set()
 wait_caption = set()
 
 
-# ✅ Force Join Check
+# ✅ FORCE JOIN CHECK (SAFE)
 async def check_join(client, message):
     try:
         user_id = message.from_user.id
-        await client.get_chat_member(CHANNEL, user_id)
-        return True
-    except UserNotParticipant:
-        buttons = InlineKeyboardMarkup(
-            [
-                [InlineKeyboardButton("🔗 Join Channel", url=f"https://t.me/{CHANNEL}")],
-                [InlineKeyboardButton("✅ I've Joined", callback_data="check_join")]
-            ]
-        )
+        member = await client.get_chat_member(GROUP_ID, user_id)
 
-        await message.reply_text(
-            "⚠️ You must join our channel to use this bot!",
-            reply_markup=buttons
-        )
-        return False
+        if member.status in ["member", "administrator", "creator"]:
+            return True
+
+    except Exception:
+        pass
+
+    buttons = InlineKeyboardMarkup(
+        [
+            [InlineKeyboardButton("🔗 Join Group", url=GROUP_LINK)],
+            [InlineKeyboardButton("✅ I've Joined", callback_data="check_join")]
+        ]
+    )
+
+    await message.reply_text(
+        "⚠️ Please join our group to use this bot!",
+        reply_markup=buttons
+    )
+    return False
 
 
-# 🔁 Recheck button
+# 🔁 RECHECK BUTTON
 @bot.on_callback_query(filters.regex("check_join"))
 async def recheck(client, callback_query):
     if await check_join(client, callback_query.message):
-        await callback_query.message.edit("✅ You can now use the bot!")
+        await callback_query.message.edit("✅ Now you can use the bot!")
     else:
-        await callback_query.answer("❌ Please join channel first!", show_alert=True)
+        await callback_query.answer("❌ Join first!", show_alert=True)
 
 
-# 🚀 Start
+# 🚀 START
 @bot.on_message(filters.command("start"))
 async def start(client, message):
 
@@ -68,7 +75,7 @@ async def start(client, message):
     )
 
 
-# 🖼 Set Thumbnail
+# 🖼 SET THUMBNAIL
 @bot.on_message(filters.command("setthumb"))
 async def thumb(client, message):
 
@@ -95,7 +102,7 @@ async def save_thumb(client, message):
         await message.reply_text("✅ Thumbnail saved")
 
 
-# ✏️ Set Caption
+# ✏️ SET CAPTION
 @bot.on_message(filters.command("setcaption"))
 async def caption(client, message):
 
@@ -106,7 +113,7 @@ async def caption(client, message):
     await message.reply_text("📝 Send caption text")
 
 
-@bot.on_message(filters.text & ~filters.command(["start", "setthumb", "setcaption"]))
+@bot.on_message(filters.text)
 async def save_caption(client, message):
 
     if not await check_join(client, message):
@@ -121,7 +128,7 @@ async def save_caption(client, message):
         await message.reply_text("✅ Caption saved")
 
 
-# 📂 Process Files
+# 📂 PROCESS FILE
 @bot.on_message(filters.document | filters.video)
 async def process_file(client, message):
 
@@ -148,5 +155,7 @@ async def process_file(client, message):
     await status.delete()
 
 
+# 🚀 START BOT
 print("🚀 Bot Started Successfully")
+bot.delete_webhook()
 bot.run()
