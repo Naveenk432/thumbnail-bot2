@@ -7,7 +7,7 @@ API_HASH = os.environ.get("API_HASH")
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
 # 🔥 PUT YOUR GROUP ID HERE (VERY IMPORTANT)
-GROUP_ID =   # 👈 replace with your real group ID
+GROUP_ID =4646565656556656   # 👈 replace with your real group ID
 
 # 🔗 Put your group link here
 GROUP_LINK = "https://t.me/your_group_link"
