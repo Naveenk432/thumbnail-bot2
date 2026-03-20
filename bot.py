@@ -1,13 +1,20 @@
 import os
 import asyncio
+
+# 🔥 IMPORTANT FIX (for Python 3.14)
+try:
+    asyncio.get_event_loop()
+except RuntimeError:
+    asyncio.set_event_loop(asyncio.new_event_loop())
+
 from pyrogram import Client, filters, idle
 
-# ✅ Get environment variables
+# ✅ ENV VARIABLES
 API_ID = int(os.environ.get("API_ID"))
 API_HASH = os.environ.get("API_HASH")
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
-# ✅ Create bot
+# ✅ BOT CLIENT
 bot = Client(
     "thumbnail-bot",
     api_id=API_ID,
@@ -16,7 +23,7 @@ bot = Client(
     workers=50
 )
 
-# ✅ Storage
+# ✅ STORAGE
 thumbs = {}
 captions = {}
 wait_thumb = set()
@@ -36,7 +43,7 @@ async def start(client, message):
 
 # ✅ SET THUMB
 @bot.on_message(filters.command("setthumb"))
-async def thumb(client, message):
+async def set_thumb(client, message):
     if not message.from_user:
         return
     wait_thumb.add(message.from_user.id)
@@ -46,7 +53,6 @@ async def thumb(client, message):
 # ✅ SAVE THUMB
 @bot.on_message(filters.photo)
 async def save_thumb(client, message):
-
     if not message.from_user:
         return
 
@@ -64,19 +70,16 @@ async def save_thumb(client, message):
 
 # ✅ SET CAPTION
 @bot.on_message(filters.command("setcaption"))
-async def caption(client, message):
-
+async def set_caption(client, message):
     if not message.from_user:
         return
-
     wait_caption.add(message.from_user.id)
     await message.reply_text("✍️ Send caption text")
 
 
 # ✅ SAVE CAPTION
-@bot.on_message(filters.text & ~filters.command(["start","setthumb","setcaption"]))
+@bot.on_message(filters.text & ~filters.command(["start", "setthumb", "setcaption"]))
 async def save_caption(client, message):
-
     if not message.from_user:
         return
 
@@ -91,7 +94,6 @@ async def save_caption(client, message):
 # ✅ PROCESS FILE
 @bot.on_message(filters.document | filters.video)
 async def process_file(client, message):
-
     if not message.from_user:
         return
 
@@ -119,11 +121,12 @@ async def process_file(client, message):
         await message.reply_text(f"❌ Error: {e}")
 
 
-# ✅ MAIN RUN (Render safe)
+# ✅ MAIN RUN (WORKS ON PYTHON 3.14)
 async def main():
     await bot.start()
     print("🤖 Bot Started Successfully")
     await idle()
+
 
 if __name__ == "__main__":
     asyncio.run(main())
