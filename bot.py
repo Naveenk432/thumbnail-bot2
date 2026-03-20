@@ -10,7 +10,7 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN")
 GROUP_ID = -1001234567890   # 👈 REPLACE THIS
 
 # 🔗 PUT YOUR GROUP INVITE LINK
-GROUP_LINK = "https://t.me/+6DRO0BsAvXA4OTA9"
+GROUP_LINK = "https://t.me/knmoviesrequest"
 
 bot = Client(
     "thumbnail-bot",
