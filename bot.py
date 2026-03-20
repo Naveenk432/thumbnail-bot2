@@ -1,132 +1,101 @@
 import os
 import asyncio
+from pyrogram import Client, filters
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.errors import FloodWait
 
-# 🔥 IMPORTANT FIX (for Python 3.14)
-try:
-    asyncio.get_event_loop()
-except RuntimeError:
-    asyncio.set_event_loop(asyncio.new_event_loop())
+# ---------------- CONFIG ----------------
+API_ID = int(os.getenv("API_ID", "0"))
+API_HASH = os.getenv("API_HASH")
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 
-from pyrogram import Client, filters, idle
+CHANNEL_USERNAME = "https://t.me/knmoviesrequest"
 
-# ✅ ENV VARIABLES
-API_ID = int(os.environ.get("API_ID"))
-API_HASH = os.environ.get("API_HASH")
-BOT_TOKEN = os.environ.get("BOT_TOKEN")
-
-# ✅ BOT CLIENT
 bot = Client(
-    "thumbnail-bot",
+    "rename-bot",
     api_id=API_ID,
     api_hash=API_HASH,
     bot_token=BOT_TOKEN,
-    workers=50
+    workers=100
 )
 
-# ✅ STORAGE
+# ---------------- STORAGE ----------------
 thumbs = {}
 captions = {}
 wait_thumb = set()
 wait_caption = set()
 
+# ---------------- FORCE JOIN ----------------
+async def check_join(client, user_id):
+    try:
+        member = await client.get_chat_member(CHANNEL_USERNAME, user_id)
+        return member.status in ["member", "administrator", "creator"]
+    except:
+        return False
 
-# ✅ START
+
+async def force_join(client, message):
+    buttons = InlineKeyboardMarkup([
+        [InlineKeyboardButton("📢 Join Channel", url=f"https://t.me/{CHANNEL_USERNAME}")]
+    ])
+
+    await message.reply_text(
+        "🚫 You must join our channel to use this bot!",
+        reply_markup=buttons
+    )
+
+# ---------------- START ----------------
 @bot.on_message(filters.command("start"))
 async def start(client, message):
+
+    if not await check_join(client, message.from_user.id):
+        return await force_join(client, message)
+
     await message.reply_text(
         "👋 Hello!\n\n"
         "/setthumb - Set thumbnail\n"
         "/setcaption - Set caption\n\n"
-        "Then send any file."
+        "📁 Send file → I will rename & send back"
     )
 
-
-# ✅ SET THUMB
+# ---------------- THUMB ----------------
 @bot.on_message(filters.command("setthumb"))
-async def set_thumb(client, message):
-    if not message.from_user:
-        return
+async def thumb(client, message):
+
+    if not await check_join(client, message.from_user.id):
+        return await force_join(client, message)
+
     wait_thumb.add(message.from_user.id)
     await message.reply_text("📸 Send image for thumbnail")
 
 
-# ✅ SAVE THUMB
 @bot.on_message(filters.photo)
 async def save_thumb(client, message):
-    if not message.from_user:
-        return
 
     user = message.from_user.id
 
     if user in wait_thumb:
-        try:
-            file = await message.download()
-            thumbs[user] = file
-            wait_thumb.remove(user)
-            await message.reply_text("✅ Thumbnail saved")
-        except Exception as e:
-            await message.reply_text(f"❌ Error: {e}")
+        file = await message.download()
+        thumbs[user] = file
+        wait_thumb.remove(user)
+        await message.reply_text("✅ Thumbnail saved")
 
-
-# ✅ SET CAPTION
+# ---------------- CAPTION ----------------
 @bot.on_message(filters.command("setcaption"))
-async def set_caption(client, message):
-    if not message.from_user:
-        return
+async def caption(client, message):
+
+    if not await check_join(client, message.from_user.id):
+        return await force_join(client, message)
+
     wait_caption.add(message.from_user.id)
     await message.reply_text("✍️ Send caption text")
 
 
-# ✅ SAVE CAPTION
-@bot.on_message(filters.text & ~filters.command(["start", "setthumb", "setcaption"]))
+@bot.on_message(filters.text & ~filters.command(["start","setthumb","setcaption"]))
 async def save_caption(client, message):
-    if not message.from_user:
-        return
 
     user = message.from_user.id
 
     if user in wait_caption:
         captions[user] = message.text
         wait_caption.remove(user)
-        await message.reply_text("✅ Caption saved")
-
-
-# ✅ PROCESS FILE
-@bot.on_message(filters.document | filters.video)
-async def process_file(client, message):
-    if not message.from_user:
-        return
-
-    user = message.from_user.id
-
-    try:
-        status = await message.reply_text("📥 Downloading...")
-
-        file_path = await message.download()
-
-        await status.edit("📤 Uploading...")
-
-        await message.reply_document(
-            file_path,
-            caption=captions.get(user, ""),
-            thumb=thumbs.get(user, None),
-            force_document=True
-        )
-
-        os.remove(file_path)
-
-        await status.delete()
-
-    except Exception as e:
-        await message.reply_text(f"❌ Error: {e}")
-
-
-# ✅ MAIN RUN (WORKS ON PYTHON 3.14)
-async def main():
-    await bot.start()
-    print("🤖 Bot Started Successfully")
-    await idle()
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
