@@ -8,7 +8,7 @@ API_HASH = os.environ.get("API_HASH")
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
 # 👉 Put your channel username (without @)
-CHANNEL = "your_channel_username"
+CHANNEL = "https://t.me/knmoviesrequest"
 
 bot = Client(
     "thumbnail-bot",
