@@ -1,6 +1,14 @@
 import os
-from pyrogram import Client, filters
+import asyncio
+from pyrogram import Client, filters, idle
 
+# ✅ Fix event loop (IMPORTANT for Render)
+try:
+    asyncio.get_event_loop()
+except RuntimeError:
+    asyncio.set_event_loop(asyncio.new_event_loop())
+
+# ✅ Env variables
 API_ID = int(os.environ.get("API_ID"))
 API_HASH = os.environ.get("API_HASH")
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
@@ -10,7 +18,7 @@ bot = Client(
     api_id=API_ID,
     api_hash=API_HASH,
     bot_token=BOT_TOKEN,
-    workers=100
+    workers=50
 )
 
 thumbs = {}
@@ -19,6 +27,7 @@ wait_thumb = set()
 wait_caption = set()
 
 
+# ✅ START
 @bot.on_message(filters.command("start"))
 async def start(client, message):
     await message.reply_text(
@@ -29,76 +38,96 @@ async def start(client, message):
     )
 
 
+# ✅ SET THUMB
 @bot.on_message(filters.command("setthumb"))
 async def thumb(client, message):
+    if not message.from_user:
+        return
     wait_thumb.add(message.from_user.id)
     await message.reply_text("Send image for thumbnail")
 
 
+# ✅ SAVE THUMB
 @bot.on_message(filters.photo)
 async def save_thumb(client, message):
+
+    if not message.from_user:
+        return
 
     user = message.from_user.id
 
     if user in wait_thumb:
+        try:
+            file = await message.download()
+            thumbs[user] = file
+            wait_thumb.remove(user)
+            await message.reply_text("Thumbnail saved ✅")
+        except Exception as e:
+            await message.reply_text(f"Error: {e}")
 
-        file = await message.download()
 
-        thumbs[user] = file
-
-        wait_thumb.remove(user)
-
-        await message.reply_text("Thumbnail saved ✅")
-
-
+# ✅ SET CAPTION
 @bot.on_message(filters.command("setcaption"))
 async def caption(client, message):
 
-    wait_caption.add(message.from_user.id)
+    if not message.from_user:
+        return
 
+    wait_caption.add(message.from_user.id)
     await message.reply_text("Send caption text")
 
 
+# ✅ SAVE CAPTION
 @bot.on_message(filters.text & ~filters.command(["start","setthumb","setcaption"]))
 async def save_caption(client, message):
+
+    if not message.from_user:
+        return
 
     user = message.from_user.id
 
     if user in wait_caption:
-
         captions[user] = message.text
-
         wait_caption.remove(user)
-
         await message.reply_text("Caption saved ✅")
 
 
+# ✅ PROCESS FILE
 @bot.on_message(filters.document | filters.video)
 async def process_file(client, message):
 
+    if not message.from_user:
+        return
+
     user = message.from_user.id
 
-    status = await message.reply_text("Downloading...")
+    try:
+        status = await message.reply_text("📥 Downloading...")
 
-    file_path = await message.download()
+        file_path = await message.download()
 
-    await status.edit("Uploading...")
+        await status.edit("📤 Uploading...")
 
-    await message.reply_document(
-        file_path,
-        caption=captions.get(user),
-        thumb=thumbs.get(user),
-        force_document=True
-    )
+        await message.reply_document(
+            file_path,
+            caption=captions.get(user, ""),
+            thumb=thumbs.get(user, None),
+            force_document=True
+        )
 
-    os.remove(file_path)
+        os.remove(file_path)
 
-    await status.delete()
+        await status.delete()
 
-
-print("Bot Started Successfully")
-bot.run()
-
-
+    except Exception as e:
+        await message.reply_text(f"❌ Error: {e}")
 
 
+# ✅ MAIN RUN (Render safe)
+async def main():
+    await bot.start()
+    print("🤖 Bot Started Successfully")
+    await idle()
+
+if __name__ == "__main__":
+    asyncio.run(main())
