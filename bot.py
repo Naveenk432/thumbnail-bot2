@@ -151,5 +151,4 @@ async def process_file(client, message):
 
 # 🚀 START BOT
 print("🚀 Bot Started Successfully")
-bot.delete_webhook()
 bot.run()
