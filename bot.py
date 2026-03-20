@@ -7,7 +7,7 @@ API_HASH = os.environ.get("API_HASH")
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
 # 🔥 PUT YOUR GROUP ID HERE (VERY IMPORTANT)
-GROUP_ID = -https://t.me/+6DRO0BsAvXA4OTA9   # 👈 replace with your real group ID
+GROUP_ID =   # 👈 replace with your real group ID
 
 # 🔗 Put your group link here
 GROUP_LINK = "https://t.me/your_group_link"
@@ -153,6 +153,9 @@ async def process_file(client, message):
     os.remove(file_path)
 
     await status.delete()
+    @bot.on_message()
+async def get_id(client, message):
+    print(message.chat.id)
 
 
 # 🚀 START BOT
