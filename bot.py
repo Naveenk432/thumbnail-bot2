@@ -7,7 +7,7 @@ API_HASH = os.environ.get("API_HASH")
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
 # 🔥 PUT YOUR GROUP USERNAME (NOT LINK)
-CHANNEL = "KnMovieRequest"   # example: knmoviesgroup
+CHANNEL = "knmovierequest"   # example: knmoviesgroup
 
 bot = Client(
     "thumbnail-bot",
